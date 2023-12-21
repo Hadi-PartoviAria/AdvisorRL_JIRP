@@ -72,3 +72,5 @@ class DFA:
 
                 output_file.write( "("+str(startingState)+","+str(goalState)+",'"+str(symbol) + "', "+reward_description + ")")
 
+
+

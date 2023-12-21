@@ -2,7 +2,6 @@ from worlds.traffic_world import TrafficWorldParams, TrafficWorld
 from worlds.craft_world import CraftWorldParams, CraftWorld
 from worlds.office_world import OfficeWorldParams, OfficeWorld
 from worlds.taxi_world import TaxiWorldParams, TaxiWorld
-from worlds.chemical_world import ChemicalWorldParams, ChemicalWorld
 
 class GameParams:
     """
@@ -11,7 +10,7 @@ class GameParams:
     def __init__(self, game_type, game_params):
         self.game_type   = game_type
         self.game_params = game_params
-        if self.game_type not in ["craftworld", "trafficworld", "officeworld", "taxiworld", "chemicalworld"]:
+        if self.game_type not in ["craftworld", "trafficworld", "officeworld", "taxiworld"]:
             print(self.game_type, "is not currently supported")
             exit()
 
@@ -27,8 +26,6 @@ class Game:
             self.game = OfficeWorld(params.game_params)
         if params.game_type == "taxiworld":
             self.game = TaxiWorld(params.game_params)
-        if params.game_type == "chemicalworld":
-            self.game = ChemicalWorld(params.game_params)
         
     def is_env_game_over(self):
         return self.game.env_game_over

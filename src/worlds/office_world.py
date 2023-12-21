@@ -3,306 +3,233 @@ if __name__ == '__main__':
     import sys
     sys.path.insert(0, '../')
 
-from worlds.game_objects import Actions
-import random, math, os
+import random
 import numpy as np
+from worlds.game_objects import Actions
+import logging
 
-"""
-Auxiliary class with the configuration parameters that the Game class needs
-"""
+logging.basicConfig(level=logging.INFO)
+
 class OfficeWorldParams:
     def __init__(self):
         pass
 
 class OfficeWorld:
-
     def __init__(self, params):
         self._load_map()
         self.env_game_over = False
+        self.last_action = None
+        self.objects = {
+            1: {"position": (1, 1), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
+            2: {"position": (2, 2), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
+            3: {"position": (3, 3), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
+            4: {"position": (4, 4), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
+        }
 
     def execute_action(self, a):
-        """
-        We execute 'action' in the game
-        """
-        x,y = self.agent
-        # executing action
-        self.agent = self.xy_MDP_slip(a,0.9) # progresses in x-y system
-
-    def xy_MDP_slip(self,a,p):
-        x,y = self.agent
-        slip_p = [p,(1-p)/2,(1-p)/2]
-        check = random.random()
-
-        # up    = 0
-        # right = 1 
-        # down  = 2 
-        # left  = 3 
-
-        if (check<=slip_p[0]):
-            a_ = a
-
-        elif (check>slip_p[0]) & (check<=(slip_p[0]+slip_p[1])):
-            if a == 0: 
-                a_ = 3
-            elif a == 2: 
-                a_ = 1
-            elif a == 3: 
-                a_ = 2
-            elif a == 1: 
-                a_ = 0
-
-        else:
-            if a == 0: 
-                a_ = 1
-            elif a == 2: 
-                a_ = 3
-            elif a == 3: 
-                a_ = 0
-            elif a == 1: 
-                a_ = 2
-
-        action_ = Actions(a_)
-        if (x,y,action_) not in self.forbidden_transitions:
-            if action_ == Actions.up:
-                y+=1
-            if action_ == Actions.down:
-                y-=1
-            if action_ == Actions.left:
-                x-=1
-            if action_ == Actions.right:
-                x+=1
-
-        self.a_ = a_
-        return (x,y)
-
+        self.last_action = a 
+        if a in [Actions.up.value, Actions.right.value, Actions.down.value, Actions.left.value]:
+            self.move_agent(a)
+            # print("move")
+        elif a in [Actions.change_color.value, Actions.change_shape.value]:
+            self.handle_advanced_action(a)
+            # print("change")
+    
     def get_actions(self):
         """
-        Returns the list with the actions that the agent can perform
+        Returns a list of all possible actions the agent can perform.
         """
         return self.actions
 
-    def get_last_action(self):
-        """
-        Returns agent's last action
-        """
-        return self.a_
-
-    def get_true_propositions(self):
-        """
-        Returns the string with the propositions that are True in this state
-        """
-        ret = ""
-        if self.agent in self.objects:
-            ret += self.objects[self.agent]
-        return ret
+    def move_agent(self, action):
+        x, y = self.agent
+        dx, dy = [(0, -1), (1, 0), (0, 1), (-1, 0)][action]
+        new_x, new_y = x + dx, y + dy
+        if (0 <= new_x < self.grid_size_x) and (0 <= new_y < self.grid_size_y):
+            self.agent = (new_x, new_y)
 
     def get_state(self):
-        return None # we are only using "simple reward machines" for the craft domain
+        return None
 
-    # The following methods return different feature representations of the map ------------
+    def handle_advanced_action(self, a):
+        # print("action:", a)
+        if a == Actions.change_color.value:
+            self.change_object_color()
+        elif a == Actions.change_shape.value:
+            self.change_object_shape()
+
+    def get_last_action(self):
+        return self.last_action
+
+    def change_object_color(self):
+        color_order = ['red', 'blue', 'green', 'yellow']
+        agent_pos = self.agent
+        for obj_id, obj_info in self.objects.items():
+            if agent_pos == obj_info['position']:
+                # Randomly choose a color different from the current one
+                new_color = random.choice([c for c in color_order if c != obj_info['color']])
+                obj_info['color'] = new_color
+                obj_info['color_changed'] = True
+                break
+
+    def change_object_shape(self):
+        shape_order = ['circle', 'square', 'triangle', 'hexagon']
+        agent_pos = self.agent
+        for obj_id, obj_info in self.objects.items():
+            if agent_pos == obj_info['position']:
+                # Randomly choose a shape different from the current one
+                new_shape = random.choice([s for s in shape_order if s != obj_info['shape']])
+                obj_info['shape'] = new_shape
+                obj_info['shape_changed'] = True
+                break
+
     def get_features(self):
-        x,y = self.agent
-        N,M = 12,9
-        ret = np.zeros((N,M), dtype=np.float64)
-        ret[x,y] = 1
-        return ret.ravel() # from 2D to 1D (use a.flatten() is you want to copy the array)
+        x, y = self.agent
+        N, M = self.grid_size_x, self.grid_size_y  # Assuming these are defined in your environment
+        ret = np.zeros((N, M), dtype=np.float64)
+        ret[x, y] = 1
+        return ret.ravel()  # Flatten from 2D to 1D
 
 
-    def show(self):
-        for y in range(8,-1,-1):
-            if y % 3 == 2:
-                for x in range(12):
-                    if x % 3 == 0:
-                        print("_",end="")
-                        if 0 < x < 11:
-                            print("_",end="")
-                    if (x,y,Actions.up) in self.forbidden_transitions:
-                        print("_",end="")
-                    else:
-                        print(" ",end="")
-                print()                
-            for x in range(12):
-                if (x,y,Actions.left) in self.forbidden_transitions:
-                    print("|",end="")
-                elif x % 3 == 0:
-                    print(" ",end="")
-                if (x,y) == self.agent:
-                    print("A",end="")
-                elif (x,y) in self.objects:
-                    print(self.objects[(x,y)],end="")
-                else:
-                    print(" ",end="")
-                if (x,y,Actions.right) in self.forbidden_transitions:
-                    print("|",end="")
-                elif x % 3 == 2:
-                    print(" ",end="")
-            print()      
-            if y % 3 == 0:      
-                for x in range(12):
-                    if x % 3 == 0:
-                        print("_",end="")
-                        if 0 < x < 11:
-                            print("_",end="")
-                    if (x,y,Actions.down) in self.forbidden_transitions:
-                        print("_",end="")
-                    else:
-                        print(" ",end="")
-                print()                
 
-    # The following methods create the map ----------------------------------------------
-    def _load_map_old(self):
-        # Creating the map
-        self.objects = {}
-        #env.agent = tuple([2, 2])
-        #env.coffee = tuple([3, 5])
-        #env.init_agent = tuple([2, 2])
-        #env.locations = {(1, 1): 'a', (10, 1): 'b', (7, 3): 'c', (7, 4): 'e', (3, 5): 'f', (4, 4): 'g', (1, 8): 'd'}
-        #env.mail = tuple([7, 4])
-        self.objects[(1,1)] = "a"
-        self.objects[(10,1)] = "b"
-        #self.objects[(10,7)] = "c"
-        self.objects[(1, 3)] = "c"
-        #self.objects[(1,7)] = "d"
-        self.objects[(7,4)] = "e"  # MAIL
-        #self.objects[(8,2)] = "f"  # COFFEE
-        self.objects[(3,5)] = "f"  # COFFEE
-        self.objects[(4,4)] = "g"  # OFFICE
+    
+    def get_true_propositions(self):
+        object_to_letter = {
+            (1, 'red', 'circle'): 'q', (1, 'red', 'square'): 'r', (1, 'red', 'triangle'): 's', (1, 'red', 'hexagon'): 't',
+            (2, 'blue', 'circle'): 'e', (2, 'blue', 'square'): 'f', (2, 'blue', 'triangle'): 'g', (2, 'blue', 'hexagon'): 'h',
+            (3, 'green', 'circle'): 'i', (3, 'green', 'square'): 'j', (3, 'green', 'triangle'): 'k', (3, 'green', 'hexagon'): 'l',
+            (4, 'yellow', 'circle'): 'm', (4, 'yellow', 'square'): 'n', (4, 'yellow', 'triangle'): 'o', (4, 'yellow', 'hexagon'): 'p'
+        }
 
-        # Adding walls
-        self.forbidden_transitions = set()
-        # for x in range(12):
-        #     for y in [0]:
-        #         self.forbidden_transitions.add((x,y,Actions.down))
-        #     for y in [8]:
-        #         self.forbidden_transitions.add((x,y,Actions.up))
-        # for y in range(9):
-        #     for x in [0]:
-        #         self.forbidden_transitions.add((x,y,Actions.left))
-        #     for x in [11]:
-        #         self.forbidden_transitions.add((x,y,Actions.right))
-        # general grid
-        for x in range(12):
-            for y in [0,3,6]:
-                self.forbidden_transitions.add((x,y,Actions.down))
-                self.forbidden_transitions.add((x,y+2,Actions.up))
-        for y in range(9):
-            for x in [0,3,6,9]:
-                self.forbidden_transitions.add((x,y,Actions.left))
-                self.forbidden_transitions.add((x+2,y,Actions.right))
-        # adding 'doors'
-        for y in [1,7]:
-            for x in [2,5,8]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for x in [1,4,7,10]:
-            self.forbidden_transitions.remove((x,5,Actions.up))
-            self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1,10]:
-            self.forbidden_transitions.remove((x,2,Actions.up))
-            self.forbidden_transitions.remove((x,3,Actions.down))
-        # Adding the agent
-        self.agent = (2,1)
-        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
+        propositions = []
+        for obj_id, obj_info in self.objects.items():
+            obj_color = obj_info['color']
+            obj_shape = obj_info['shape']
+            if obj_info['color_changed'] or obj_info['shape_changed']:
+                label = object_to_letter.get((obj_id, obj_color, obj_shape), f"unknown_{obj_id}")
+                propositions.append(label)
+
+        return ', '.join(propositions) if propositions else ""
+
+
+
+    
+
+
+
     def _load_map(self):
-        # Creating the map
-        self.objects = {}
-        self.objects[(1,1)] = "a"
-        self.objects[(10,1)] = "b"
-        #self.objects[(10,7)] = "c"
-        self.objects[(1, 3)] = "c"
-        self.objects[(1,7)] = "d"
-        self.objects[(7,4)] = "e"  # MAIL
-        self.objects[(3,5)] = "f"  # COFFEE
-        self.objects[(4,4)] = "g"  # OFFICE
+        self.grid_size_x, self.grid_size_y = 6, 6
+        self.agent = (2, 1)
+        self.objects = {
+            "a": {"id": 1, "position": (1, 1), "shape": "circle", "color": "red"},
+            "b": {"id": 2, "position": (2, 2), "shape": "circle", "color": "red"},
+            "c": {"id": 3, "position": (3, 3), "shape": "circle", "color": "red"},
+            "d": {"id": 4, "position": (4, 4), "shape": "circle", "color": "red"}
+        }
+        self._add_external_walls()
 
-        # Adding the agent
-        self.agent = (2,1)
-        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value]
-
-        # Adding walls
+    def _add_external_walls(self):
         self.forbidden_transitions = set()
-        for x in range(12):
-            for y in [0,3,6]:
-                self.forbidden_transitions.add((x,y,Actions.down))
-                self.forbidden_transitions.add((x,y+2,Actions.up))
-        for y in range(9):
-            for x in [0,3,6,9]:
-                self.forbidden_transitions.add((x,y,Actions.left))
-                self.forbidden_transitions.add((x+2,y,Actions.right))
-        # adding 'doors'
-        for y in [1,7]:
-            for x in [2,5,8]:
-                self.forbidden_transitions.remove((x,y,Actions.right))
-                self.forbidden_transitions.remove((x+1,y,Actions.left))
-        for x in [1,4,7,10]:
-            self.forbidden_transitions.remove((x,5,Actions.up))
-            self.forbidden_transitions.remove((x,6,Actions.down))
-        for x in [1,10]:
-            self.forbidden_transitions.remove((x,2,Actions.up))
-            self.forbidden_transitions.remove((x,3,Actions.down))
+        for x in range(self.grid_size_x):
+            self.forbidden_transitions.add((x, 0, Actions.up.value))
+            self.forbidden_transitions.add((x, self.grid_size_y - 1, Actions.down.value))
+        for y in range(self.grid_size_y):
+            self.forbidden_transitions.add((0, y, Actions.left.value))
+            self.forbidden_transitions.add((self.grid_size_x - 1, y, Actions.right.value))
+
+        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value, Actions.change_color.value, Actions.change_shape.value]
+
         
+    def show(self):
+        for y in range(self.grid_size_y - 1, -1, -1):
+            # Horizontal walls (top)
+            for x in range(self.grid_size_x * 2):
+                print("_" if (x // 2, y, Actions.up.value) in self.forbidden_transitions else " ", end="")
+            print()
+
+            # Vertical walls and objects
+            for x in range(self.grid_size_x * 2):
+                print("|" if (x // 2, y, Actions.left.value) in self.forbidden_transitions else " ", end="")
+
+                if x % 2 == 0:  # Object or Agent position
+                    if (x // 2, y) == self.agent:
+                        print("A", end="")
+                    else:
+                        object_at_pos = [(obj_key, obj_info) for obj_key, obj_info in self.objects.items() if obj_info['position'] == (x // 2, y)]
+                        if object_at_pos:
+                            obj_id, _ = object_at_pos[0]
+                            print(obj_id, end="")  # Use object's key as its ID
+                        else:
+                            print(" ", end="")
+                else:
+                    print(" ", end="")
+
+                print("|" if (x // 2, y, Actions.right.value) in self.forbidden_transitions else " ", end="")
+            print()
+
+            # Horizontal walls (bottom)
+            if y == 0:
+                for x in range(self.grid_size_x * 2):
+                    print("_" if (x // 2, y, Actions.down.value) in self.forbidden_transitions else " ", end="")
+                print()
+
+
+      
 def play():
     from reward_machines.reward_machine import RewardMachine
 
-    # commands
-    str_to_action = {"w":Actions.up.value,"d":Actions.right.value,"s":Actions.down.value,"a":Actions.left.value}
+    # Initialize actions and parameters
+    str_to_action = {"up": Actions.up.value, "right": Actions.right.value, 
+                     "down": Actions.down.value, "left": Actions.left.value, 
+                     "change_color": Actions.change_color.value, 
+                     "change_shape": Actions.change_shape.value}
     params = OfficeWorldParams()
 
-    # play the game!
-    tasks = ["../../experiments/office/reward_machines/t%d.txt"%i for i in [1,2,3,4]]
-    reward_machines = []
-    for t in tasks:
-        reward_machines.append(RewardMachine(t))
-    for i in range(len(tasks)):
-        print("Running", tasks[i])
+    # Define tasks and reward machines
+    tasks = ["../../experiments/office/reward_machines/t%d.txt"%i for i in [1]]
+    reward_machines = [RewardMachine(t) for t in tasks]
 
-        game = OfficeWorld(params) # setting the environment
-        rm = reward_machines[i]  # setting the reward machine
+    # Play the game for each task
+    for i, rm in enumerate(reward_machines):
+        print(f"Running task: {tasks[i]}")
+
+        game = OfficeWorld(params)
         s1 = game.get_state()
         u1 = rm.get_initial_state()
+
         while True:
-            # Showing game
+            # Show game state and handle action input
             game.show()
             print("Events:", game.get_true_propositions())
-            #print(game.getLTLGoal())
-            # Getting action
-            print("u:", u1)
-            print("\nAction? ", end="")
-            a = input()
-            print()
-            # Executing action
-            if a in str_to_action:
-                game.execute_action(str_to_action[a])
+            action = input("Enter action: ").strip().lower()
 
-                # Getting new state and truth valuation
+            if action in str_to_action:
+                game.execute_action(str_to_action[action])
+
+                # Update state and reward
                 s2 = game.get_state()
                 events = game.get_true_propositions()
                 u2 = rm.get_next_state(u1, events)
-                r = rm.get_reward(u1,u2,s1,a,s2)
-                
-                # Getting rewards and next states for each reward machine
-                rewards, next_states = [],[]
-                for j in range(len(reward_machines)):
-                    j_rewards, j_next_states = reward_machines[j].get_rewards_and_next_states(s1, a, s2, events)
-                    rewards.append(j_rewards)
-                    next_states.append(j_next_states)
-                
+                r = rm.get_reward(u1, u2, s1, str_to_action[action], s2)
+
                 print("---------------------")
-                print("Rewards:", rewards)
-                print("Next States:", next_states)
                 print("Reward:", r)
                 print("---------------------")
-                
-                if game.env_game_over or rm.is_terminal_state(u2): # Game Over
-                    break 
-                
+
+                if game.env_game_over or rm.is_terminal_state(u2):
+                    break
+
                 s1 = s2
                 u1 = u2
             else:
-                print("Forbidden action")
+                print("Invalid action")
+
         game.show()
         print("Events:", game.get_true_propositions())
-    
-# This code allow to play a game (for debugging purposes)
+        print("Game Over for this task.")
+
+    print("All tasks completed. Thank you for playing!")
+
+
 if __name__ == '__main__':
     play()

@@ -1,8 +1,0 @@
-POSITIVE:
-0
-0,5,None
-0,5
-NEGATIVE:
-0
-0,5,None
-0,5
