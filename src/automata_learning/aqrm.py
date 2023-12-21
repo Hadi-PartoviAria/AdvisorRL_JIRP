@@ -360,8 +360,6 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
         random.seed(t)
         open('./automata_learning_utils/data/data.txt','w').close
         open('./automata_learning_utils/data/automaton.txt','w').close
-        ########################################******************************************      |||||||||||||||||||||||||||||||||||||||||||||||
-        open('./automata_learning_utils/data/hypothesis.dot','w').close    #This Line Was Added..
 
 
         # Reseting default values
@@ -471,7 +469,7 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
 
             epsilon = epsilon*0.99
 
-            task_timer.resume()  ######################## |||||||||||||||||||||||||||
+            task_timer.resume()
             all_events, found_reward, stepcount, conflicting, testing_reward, is_test, q = run_aqrm_task(
                 epsilon, rm_file_truth, rm_file_learned, tester, tester_learned, curriculum, show_print, learned, step, testing_reward, q
             )
@@ -698,8 +696,6 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
             if num_episodes%learning_params.relearn_period==0:
                 new_traces = Traces(set(), set())
                 LIVETESTER.add_traces_size(step, new_traces, 'new_traces')
-
-                # for Reward machine
 
             # if (learned==1 and num_episodes==1000):
             #

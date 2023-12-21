@@ -58,21 +58,11 @@ class Actions(Enum):
     right = 1 # move right
     down  = 2 # move down
     left  = 3 # move left
-    none  = 4 # none or pick
-    drop  = 5
+    change_color = 4
+    change_shape = 5
 
 class ActionsNew(Enum):
     forward = 0
     left = 1
     right  = 2
     stay  = 3
-
-class AdvancedActions(Enum):
-    # Movement actions
-    up = 0    # Move up
-    right = 1 # Move right
-    down = 2  # Move down
-    left = 3  # Move left
-
-    change_color = 4 # Change the color of an object
-    change_shape = 5 # Change the shape of an object

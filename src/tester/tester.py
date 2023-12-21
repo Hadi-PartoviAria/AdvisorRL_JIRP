@@ -2,7 +2,6 @@ from tester.tester_craft import TesterCraftWorld
 from tester.tester_office import TesterOfficeWorld
 from tester.tester_traffic import TesterTrafficWorld
 from tester.tester_taxi import TesterTaxiWorld
-from tester.tester_chemical import TesterChemicalWorld
 from reward_machines.reward_machine import RewardMachine
 from tester.test_utils import read_json, get_precentiles_str, get_precentiles_in_seconds, reward2steps
 import numpy as np
@@ -31,8 +30,6 @@ class Tester:
                 self.world = TesterTrafficWorld(experiment, learning_params.tabular_case, learning_params.gamma)
             if self.game_type == "taxiworld":
                 self.world = TesterTaxiWorld(experiment, learning_params.gamma)
-            if self.game_type == "chemicalworld":
-                self.world = TesterChemicalWorld(experiment, learning_params.gamma)
 
             # Creating the reward machines for each task
             self.reward_machines = []
@@ -66,8 +63,6 @@ class Tester:
                 self.world = TesterOfficeWorld(None, None, data['world'])
             if self.game_type == "taxiworld":
                 self.world = TesterTaxiWorld(None, None, data['world']) # TODO is that correct?
-            if self.game_type == "chemicalworld":
-                self.world = TesterChemicalWorld(None, None, data['world'])
 
             self.results = data['results']
             self.steps   = data['steps']
@@ -145,7 +140,7 @@ class Tester:
                 #print("Skiped reward is", reward)
             self.results[task_str][step].append(reward)
             aux.append(reward)
-        if self.game_type=="officeworld" or self.game_type=="craftworld" or self.game_type=="trafficworld" or self.game_type=="chemicalworld":
+        if self.game_type=="officeworld" or self.game_type=="craftworld" or self.game_type=="trafficworld":
             print("Testing: %0.1f"%(time.time() - t_init), "seconds\tTotal: %d"%sum([(r if r > 0 else self.testing_params.num_steps) for r in reward2steps(aux)]))
             print("\t".join(["%d"%(r) for r in reward2steps(aux)]))
         return reward

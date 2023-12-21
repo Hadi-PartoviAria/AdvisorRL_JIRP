@@ -28,7 +28,7 @@ class Traces:
         return all_prefixes
 
     def symbol_to_trace(self,symbols):
-        letters = ['a','b','c','d','e','f','g', 'h', 'n']
+        letters = ['a','b','c','d','e','f','g', 'h', 'n', 'i', 'j', 'k', 'm', 'l', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'y', 'w', 'z']
         numbers = [int(i) for i in range(0,9)]
         dictionary = dict(zip(letters, numbers))
         traces = list()
@@ -38,7 +38,7 @@ class Traces:
 
 
     def trace_to_symbol(self,traces):
-        letters = ['a','b','c','d','e','f','g', 'h', 'n']
+        letters = ['a','b','c','d','e','f','g', 'h', 'n', 'i', 'j', 'k', 'm', 'l', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'y', 'w', 'z']
         numbers = [int(i) for i in range(0,9)]
         dictionary = dict(zip(numbers, letters))
         symbols = list()
@@ -48,7 +48,7 @@ class Traces:
 
     def rm_trace_to_symbol(self,rm_file):
         file = rm_file
-        letters = ['a','b','c','d','e','f','g', 'h', 'n']
+        letters = ['a','b','c','d','e','f','g', 'h', 'n', 'i', 'j', 'k', 'm', 'l', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'y', 'w', 'z']
         numbers = [int(i) for i in range(0,9)]
         dictionary = dict(zip(numbers, letters))
 
