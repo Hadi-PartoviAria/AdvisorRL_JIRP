@@ -58,8 +58,10 @@ class Actions(Enum):
     right = 1 # move right
     down  = 2 # move down
     left  = 3 # move left
-    change_color = 4
-    change_shape = 5
+    change_color_up = 4
+    change_color_down = 5
+    change_shape_up = 6
+    change_shape_down = 7
 
 class ActionsNew(Enum):
     forward = 0

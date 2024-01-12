@@ -75,7 +75,7 @@ def get_params_craft_world(experiment):
 
 def get_params_office_world(experiment):
     # step_unit = 1000
-    step_unit = 1000
+    step_unit = 14000
 
     # configuration of testing params
     testing_params = TestingParameters()
@@ -115,8 +115,8 @@ def get_params_office_world(experiment):
     curriculum = CurriculumLearner(tester.get_task_rms())
     curriculum.num_steps = testing_params.num_steps
     # curriculum.total_steps = 400 * step_unit
-    # curriculum.total_steps = 800 * step_unit
-    curriculum.total_steps = 500 * step_unit
+    curriculum.total_steps = 800 * step_unit
+    # curriculum.total_steps = 500 * step_unit
     curriculum.min_steps = 1
 
     print("Water World ----------")

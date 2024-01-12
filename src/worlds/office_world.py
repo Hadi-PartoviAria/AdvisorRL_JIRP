@@ -18,22 +18,32 @@ class OfficeWorld:
     def __init__(self, params):
         self._load_map()
         self.env_game_over = False
-        self.last_action = None
-        self.objects = {
-            1: {"position": (1, 1), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
-            2: {"position": (2, 2), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
-            3: {"position": (3, 3), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
-            4: {"position": (4, 4), "shape": "circle", "color": "red", "color_changed": False, "shape_changed": False},
-        }
+
 
     def execute_action(self, a):
-        self.last_action = a 
-        if a in [Actions.up.value, Actions.right.value, Actions.down.value, Actions.left.value]:
-            self.move_agent(a)
-            # print("move")
-        elif a in [Actions.change_color.value, Actions.change_shape.value]:
-            self.handle_advanced_action(a)
-            # print("change")
+        """
+        We execute 'action' in the game
+        """
+        x,y = self.agent[:2]
+        ssw1, ssw2 = self.agent[2:]
+        temp = list(self.agent)
+        # temp[2:] = ss1, ss2
+        # print('temp in execute action:', temp)
+        # print('temp in execute action:', temp)
+        # exit()
+        # self.agent = tuple(temp)
+
+        # executing action
+        self.agent = self.xy_MDP_slip(a,1, ssw1, ssw2) # progresses in x-y system
+        print('agent is:',self.agent)
+        # exit()
+        # x,y = self.agent[:2]
+        # temp = list(self.agent)
+        # temp[2:] = ss1, ss2, ss3, ss4, cc1, cc2, cc3, cc4
+        # print('temp in execute action:', temp)
+        # # print('temp in execute action:', temp)
+        # # exit()
+        # self.agent = tuple(temp)
     
     def get_actions(self):
         """
@@ -41,104 +51,201 @@ class OfficeWorld:
         """
         return self.actions
 
-    def move_agent(self, action):
-        x, y = self.agent
-        dx, dy = [(0, -1), (1, 0), (0, 1), (-1, 0)][action]
-        new_x, new_y = x + dx, y + dy
-        if (0 <= new_x < self.grid_size_x) and (0 <= new_y < self.grid_size_y):
-            self.agent = (new_x, new_y)
+    def xy_MDP_slip(self,a,p, ssw1, ssw2):
+        x,y = self.agent[:2]
+        shape, color = self.agent[2:4]
+        slip_p = [p,(1-p)/2,(1-p)/2]
+        check = 0.5
+
+        # up    = 0
+        # right = 1 
+        # down  = 2 
+        # left  = 3 
+
+        if (check<=slip_p[0]):
+            a_ = a
+            print('action:', a)
+
+        elif (check>slip_p[0]) & (check<=(slip_p[0]+slip_p[1])):
+            if a == 0: 
+                a_ = 3
+            elif a == 2: 
+                a_ = 1
+            elif a == 3: 
+                a_ = 2
+            elif a == 1: 
+                a_ = 0
+
+        else:
+            if a == 0: 
+                a_ = 1
+            elif a == 2: 
+                a_ = 3
+            elif a == 3: 
+                a_ = 0
+            elif a == 1: 
+                a_ = 2
+
+        # ssw1 = 0
+        # ssw2 = 0
+        action_ = Actions(a_)
+        if (x,y,shape, color, action_) not in self.forbidden_transitions:
+            if action_ == Actions.up:
+                y+=1
+            if action_ == Actions.down:
+                y-=1
+            if action_ == Actions.left:
+                x-=1
+            if action_ == Actions.right:
+                x+=1
+            if action_ == Actions.change_color_up:
+                # if ssw2 > 15:
+                #     ssw2 = 15
+                # elif ssw2<0:
+                #     ssw2 = 0
+                # else:
+                ssw2 +=1
+            if action_ == Actions.change_color_down:
+                # if ssw2 > 15:
+                #     ssw2 = 15
+                # elif ssw2<0:
+                #     ssw2 = 0
+                # else:
+                ssw2 -=1
+            if action_ == Actions.change_shape_up:
+                # if ssw1 > 15:
+                #     ssw1 = 15
+                # elif ssw1<0:
+                #     ssw1 = 0
+                # else:
+                ssw1 +=1
+            if action_ == Actions.change_shape_down:
+                # if ssw1 > 15:
+                #     ssw1 = 15
+                # elif ssw1<0:
+                #     ssw1 = 0
+                # else:
+                ssw1 -=1  
+                
+
+        self.a_ = a_
+        return (x,y, ssw1,ssw2)
 
     def get_state(self):
-        return None
+        return None # we are only using "simple reward machines" for the craft domain
+        
 
-    def handle_advanced_action(self, a):
-        # print("action:", a)
-        if a == Actions.change_color.value:
-            self.change_object_color()
-        elif a == Actions.change_shape.value:
-            self.change_object_shape()
 
     def get_last_action(self):
-        return self.last_action
+        """
+        Returns agent's last action
+        """
+        return self.a_
 
-    def change_object_color(self):
-        color_order = ['red', 'blue', 'green', 'yellow']
-        agent_pos = self.agent
-        for obj_id, obj_info in self.objects.items():
-            if agent_pos == obj_info['position']:
-                # Randomly choose a color different from the current one
-                new_color = random.choice([c for c in color_order if c != obj_info['color']])
-                obj_info['color'] = new_color
-                obj_info['color_changed'] = True
-                break
 
-    def change_object_shape(self):
-        shape_order = ['circle', 'square', 'triangle', 'hexagon']
-        agent_pos = self.agent
-        for obj_id, obj_info in self.objects.items():
-            if agent_pos == obj_info['position']:
-                # Randomly choose a shape different from the current one
-                new_shape = random.choice([s for s in shape_order if s != obj_info['shape']])
-                obj_info['shape'] = new_shape
-                obj_info['shape_changed'] = True
-                break
+
+
+
+
 
     def get_features(self):
-        x, y = self.agent
-        N, M = self.grid_size_x, self.grid_size_y  # Assuming these are defined in your environment
-        ret = np.zeros((N, M), dtype=np.float64)
-        ret[x, y] = 1
+        x, y = self.agent[:2]
+        print('x:', x, 'y', y)
+        print('agent dim is', self.agent[:2])
+        N, M = self.grid_size_x, self.grid_size_y  
+        ret = np.zeros((N, M, 2, 2
+                        ), dtype=np.float64)
+        # print(x,y)
+        print('ret dim:', ret.shape)
+        ret[x, y,0,0] = 1
+        # exit()[[[[
+        # print(ret)
+        # print('ret', ret.ravel())
         return ret.ravel()  # Flatten from 2D to 1D
 
 
 
     
     def get_true_propositions(self):
-        object_to_letter = {
-            (1, 'red', 'circle'): 'q', (1, 'red', 'square'): 'r', (1, 'red', 'triangle'): 's', (1, 'red', 'hexagon'): 't',
-            (2, 'blue', 'circle'): 'e', (2, 'blue', 'square'): 'f', (2, 'blue', 'triangle'): 'g', (2, 'blue', 'hexagon'): 'h',
-            (3, 'green', 'circle'): 'i', (3, 'green', 'square'): 'j', (3, 'green', 'triangle'): 'k', (3, 'green', 'hexagon'): 'l',
-            (4, 'yellow', 'circle'): 'm', (4, 'yellow', 'square'): 'n', (4, 'yellow', 'triangle'): 'o', (4, 'yellow', 'hexagon'): 'p'
-        }
-
-        propositions = []
-        for obj_id, obj_info in self.objects.items():
-            obj_color = obj_info['color']
-            obj_shape = obj_info['shape']
-            if obj_info['color_changed'] or obj_info['shape_changed']:
-                label = object_to_letter.get((obj_id, obj_color, obj_shape), f"unknown_{obj_id}")
-                propositions.append(label)
-
-        return ', '.join(propositions) if propositions else ""
-
-
-
-    
-
+            """
+            Returns the string with the propositions that are True in this state
+            """
+            ret = ""
+            if self.agent in self.objects:
+                ret += self.objects[self.agent]
+            return ret
 
 
     def _load_map(self):
+        self.objects = {}
         self.grid_size_x, self.grid_size_y = 6, 6
-        self.agent = (2, 1)
-        self.objects = {
-            "a": {"id": 1, "position": (1, 1), "shape": "circle", "color": "red"},
-            "b": {"id": 2, "position": (2, 2), "shape": "circle", "color": "red"},
-            "c": {"id": 3, "position": (3, 3), "shape": "circle", "color": "red"},
-            "d": {"id": 4, "position": (4, 4), "shape": "circle", "color": "red"}
-        }
+        self.agent = (1,1,0,0)
+        self.objects[(1,2, 2,2)] = 'c'
+        self.objects[(2,2, 3,2)] = 'b'
+        self.objects[(3,2, 1,2)] = 'f'
+        self.objects[(3,3, 3,3)] = 'g'
+
+        self.forbidden_transitions = set()
+
+        # self.objects = {
+        #     "a": {"id": 1, "position": (2, 3), "shape": "diamond", "color": "green"},
+        #     "b": {"id": 2, "position": (3, 2), "shape": "circle", "color": "green"},
+        #     "c": {"id": 3, "position": (2, 2), "shape": "square", "color": "black"},
+        #     "d": {"id": 4, "position": (5, 1), "shape": "diamond", "color": "brown"}
+        # }
         self._add_external_walls()
 
     def _add_external_walls(self):
-        self.forbidden_transitions = set()
+        
+        print('grid size x', self.grid_size_x)
+        print('grid size y', self.grid_size_y)
+        # exit()
+        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value,
+                         Actions.change_color_up.value, Actions.change_color_down.value,
+                           Actions.change_shape_up.value, Actions.change_shape_down.value]
+
         for x in range(self.grid_size_x):
-            self.forbidden_transitions.add((x, 0, Actions.up.value))
-            self.forbidden_transitions.add((x, self.grid_size_y - 1, Actions.down.value))
+            for shape in range(16):
+                for color in range(16):
+                    self.forbidden_transitions.add((x, 0, shape, color, Actions.down))
+                    self.forbidden_transitions.add((x, self.grid_size_y-1, shape, color , Actions.up))
         for y in range(self.grid_size_y):
-            self.forbidden_transitions.add((0, y, Actions.left.value))
-            self.forbidden_transitions.add((self.grid_size_x - 1, y, Actions.right.value))
+            for shape in range(16):
+                for color in range(16):
+                    self.forbidden_transitions.add((0, y, shape, color, Actions.left))
+                    self.forbidden_transitions.add((self.grid_size_x-1, y, shape, color, Actions.right))
 
-        self.actions = [Actions.up.value,Actions.right.value,Actions.down.value,Actions.left.value, Actions.change_color.value, Actions.change_shape.value]
+        # for color in range(16):
+        for shape in range(16):
+            for color in range(16):
+                for x in range(self.grid_size_x):
+                    for y in range(self.grid_size_y):
 
+                        self.forbidden_transitions.add((x, y, shape, 15, Actions.change_color_up))
+                        self.forbidden_transitions.add((x, y, shape, 0, Actions.change_color_down))
+                        self.forbidden_transitions.add((x, y, 15, color, Actions.change_shape_up))
+                        self.forbidden_transitions.add((x, y, 0, color, Actions.change_shape_down))
+
+        # for x in range(self.grid_size_x):
+        #     for shape, color in zip(range(16), range(16)):
+        #         self.forbidden_transitions.add((x, 0, shape, color, Actions.down))
+        #         self.forbidden_transitions.add((x, self.grid_size_y-1, shape, color , Actions.up))
+        # for y in range(self.grid_size_y):
+        #     for shape, color in zip(range(16), range(16)):
+        #         self.forbidden_transitions.add((0, y, shape, color, Actions.left))
+        #         self.forbidden_transitions.add((self.grid_size_x-1, y, shape, color, Actions.right))
+
+        # # for color in range(16):
+        # for shape, color in zip(range(16), range(16)):
+        #     for x, y in zip(range(self.grid_size_x), range(self.grid_size_y)):
+        #         self.forbidden_transitions.add((x, y, shape, 15, Actions.change_color_up))
+        #         self.forbidden_transitions.add((x, y, shape, 0, Actions.change_color_down))
+        #         self.forbidden_transitions.add((x, y, 15, color, Actions.change_shape_up))
+        #         self.forbidden_transitions.add((x, y, 0, color, Actions.change_shape_down))
+
+                # self.forbidden_transitions.add((0, 0, Actions.change_color_down))
+                # self.forbidden_transitions.add((15, 15, Actions.change_shape_up))
+                # self.forbidden_transitions.add((0, 0, Actions.change_shape_down))
         
     def show(self):
         for y in range(self.grid_size_y - 1, -1, -1):
@@ -152,7 +259,7 @@ class OfficeWorld:
                 print("|" if (x // 2, y, Actions.left.value) in self.forbidden_transitions else " ", end="")
 
                 if x % 2 == 0:  # Object or Agent position
-                    if (x // 2, y) == self.agent:
+                    if (x // 2, y) == self.agent[:2]:
                         print("A", end="")
                     else:
                         object_at_pos = [(obj_key, obj_info) for obj_key, obj_info in self.objects.items() if obj_info['position'] == (x // 2, y)]

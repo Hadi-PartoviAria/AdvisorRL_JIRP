@@ -59,9 +59,31 @@ def run_aqrm_task(epsilon, env, learned_rm_file, tester_true, tester_learned, cu
     sy_s = [[]]
     a_s = []
     a=0
+
+    ss1 = 0
+    ss2 = 0
+    ss3 = 0
+    ss4 = 0
+
+    cc1 = 0
+    cc2 = 0
+    cc3 = 0
+    cc4 = 0
     for t in range(num_steps):
         currentstep += 1
         s = np.where(s1_features==1)[0][0]
+
+        # if t//10:
+        #     ss1 = np.random.randint(0,2)
+        #     ss2 = np.random.randint(0,2)
+        #     ss3 = np.random.randint(0,2)
+        #     ss4 = np.random.randint(0,2)
+
+        #     cc1 = np.random.randint(0,2)
+        #     cc2 = np.random.randint(0,2)
+        #     cc3 = np.random.randint(0,2)
+        #     cc4 = np.random.randint(0,2)
+
 
         # Choosing an action to perform
         # if random.random() < epsilon:
@@ -100,7 +122,7 @@ def run_aqrm_task(epsilon, env, learned_rm_file, tester_true, tester_learned, cu
         reward = rm_true.get_reward(u1_true,u2_true,s1,a,s2)
 
         q[s][u1][a] = (1 - alpha) * q[s][u1][a] + alpha * (reward + gamma * np.amax(q[s_new][u2]))
-
+        # print('state_q:', s)
         sy = s%9
         sx = (s-sy)/9
         synew = s_new % 9
@@ -200,6 +222,16 @@ def run_aqrm_test(reward_machines, task_params, rm, rm_true, is_learned, q, lear
     ok = 0
     T = 100
 
+    ss1 = 0
+    ss2 = 0
+    ss3 = 0
+    ss4 = 0
+
+    cc1 = 0
+    cc2 = 0
+    cc3 = 0
+    cc4 = 0
+
     # Starting interaction with the environment
     r_total = 0
     for t in range(testing_params.num_steps):
@@ -207,7 +239,17 @@ def run_aqrm_test(reward_machines, task_params, rm, rm_true, is_learned, q, lear
         # Choosing an action to perform
         actions = task.get_actions()
         s = np.where(s1_features==1)[0][0]
+        # if t//10:
+        #     ss1 = np.random.randint(0,2)
+        #     ss2 = np.random.randint(0,2)
+        #     ss3 = np.random.randint(0,2)
+        #     ss4 = np.random.randint(0,2)
 
+        #     cc1 = np.random.randint(0,2)
+        #     cc2 = np.random.randint(0,2)
+        #     cc3 = np.random.randint(0,2)
+        #     cc4 = np.random.randint(0,2)
+ 
         if max(q[s][u1]) == 0:
             a = random.choice(actions)
         else:
@@ -397,7 +439,7 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
         num_features = len(task_aux.get_features())
         num_actions  = len(task_aux.get_actions())
         # q = np.zeros([1681,15,4])
-        q = np.zeros([1681,15,num_actions])
+        q = np.zeros([8961,15,num_actions])
 
         hypothesis_machine = tester.get_hypothesis_machine()
         tester_learned.update_hypothesis_machine_file(hm_file)
@@ -436,7 +478,7 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
                     all_traces = Traces(set(),set())
                     LIVETESTER.add_traces_size(step, all_traces, 'all_traces')
                     num_conflicting_since_learn = 0
-                    q = np.zeros([1681,15,4])
+                    q = np.zeros([8961,15,4])
                     enter_loop = 1
             elif update_rm:
                 rm_file_learned = hm_file_update
@@ -456,7 +498,7 @@ def run_aqrm_experiments(alg_name, tester, tester_learned, curriculum, num_times
                     all_traces = Traces(set(), set())
                     LIVETESTER.add_traces_size(step, all_traces, 'all_traces')
                     num_conflicting_since_learn = 0
-                    q = np.zeros([1681, 15, 4])
+                    q = np.zeros([8961, 15, 4])
                     enter_loop = 1
                     learned = 0
                     LIVETESTER.add_bool(step, 'learned', learned)
